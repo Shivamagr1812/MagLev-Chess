@@ -1,0 +1,23 @@
+.board-outer-wrapper{
+    width: 560px;
+    height: 560px;
+}
+.board-blocks{
+    width: 12.5%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 3rem;
+    cursor: pointer;
+}
+.moves-history-wrapper{
+    width: 560px;
+    height: 20px;
+    overflow-x: scroll;
+    text-wrap: nowrap;
+    background: rgb(66, 36, 0);
+    color: white;
+    font-size: 0.7rem;
+    font-weight: bold;
+}
