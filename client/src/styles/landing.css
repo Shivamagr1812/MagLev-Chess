@@ -1,0 +1,16 @@
+.landing-btn{
+    border: 2px solid black;
+    border-radius: 2px;
+    padding: 5px 10px;
+    background-color: #edd3b1;
+    font-weight: 600;
+    margin: 20px;
+}
+.landing-btn:hover{
+    background-color: #c86f39;
+    color: white;
+}
+.landing-btn-wrapper{
+    display: flex;
+    flex-direction: column;
+}
