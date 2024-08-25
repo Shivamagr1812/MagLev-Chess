@@ -2,10 +2,22 @@ const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
 const { Chess } = require('chess.js');
+const cors =require('cors')
 
 const app = express();
 const server = http.createServer(app);
-const io = socketIo(server);
+const io = socketIo(server , {
+  cors: {
+    origin: "http://localhost:3000",
+    methods: ["GET", "POST"]
+  }
+});
+
+const corsOptions = {
+  origin: ['http://localhost:3000','http://localhost:3000/game-page'],
+  optionsSuccessStatus: 200
+}
+app.use(cors(corsOptions))
 
 // Store game states
 const games = {};
@@ -24,57 +36,73 @@ io.on('connection', (socket) => {
   };
 
   // Handle move validation and game status updates
-  socket.on('move', ({ sourceSquare, targetSquare }) => {
+  socket.on('move', ({ sourceSquare, targetSquare , currentPiece }) => {
+    //currentPiece moves from sourceSquare to targetSquare
     const game = games[gameId];
     const { chess, timer, currentPlayer, lastMoveTime } = game;
 
     // Validate the move
-    const move = chess.move({
-      from: sourceSquare,
-      to: targetSquare,
-    });
-
-    if (move) {
-      // Calculate time spent on the current move
-      const timeSpent = calculateTimeSpent(currentPlayer, lastMoveTime);
-      timer[currentPlayer === 'w' ? 'white' : 'black'] -= timeSpent;
-
-      // Update the last move time
-      lastMoveTime[currentPlayer === 'w' ? 'white' : 'black'] = Date.now();
-
-      // Switch player
-      game.currentPlayer = currentPlayer === 'w' ? 'b' : 'w';
-
-      // Check game status
-      const isCheck = chess.in_check();
-      const isCheckmate = chess.in_checkmate();
-      const isDraw = chess.in_draw();
-      const isStalemate = chess.in_stalemate();
-      const isInsufficientMaterial = chess.insufficient_material();
-      
-      // Check if there was an opponent's piece captured
-      const capturedPiece = move.captured ? move.captured.toUpperCase() : null;
-
-      // Emit game status
-      io.emit('move', {
-        move,
-        timer,
-        isCheck,
-        isCheckmate,
-        isDraw,
-        isStalemate,
-        isInsufficientMaterial,
-        capturedPiece,
+    try {
+      const move = chess.move({
+        from: sourceSquare,
+        to: targetSquare,
       });
-
-      // If the game is over, end the game
-      if (isCheckmate || isDraw || isStalemate || isInsufficientMaterial) {
-        socket.emit('game-over', {
-          result: isCheckmate ? 'checkmate' : isDraw ? 'draw' : isStalemate ? 'stalemate' : 'insufficient material',
+      //this function thorws an error if the move is invalid that crashes the server. So putting up a try-catch block
+      
+      if (move) {
+        // Calculate time spent on the current move
+        const timeSpent = calculateTimeSpent(currentPlayer, lastMoveTime);
+        timer[currentPlayer === 'w' ? 'white' : 'black'] -= timeSpent;
+  
+        // Update the last move time
+        lastMoveTime[currentPlayer === 'w' ? 'white' : 'black'] = Date.now();
+  
+        // Switch player
+        game.currentPlayer = currentPlayer === 'w' ? 'b' : 'w';
+  
+        // Check game status
+        const isCheck = chess.inCheck();
+        const isCheckmate = chess.isCheckmate();
+        const isDraw = chess.isDraw();
+        const isStalemate = chess.isStalemate();
+        const isInsufficientMaterial = chess.isInsufficientMaterial();
+        
+        // Check if there was an opponent's piece captured
+        const capturedPiece = move.captured ? move.captured.toUpperCase() : null;
+  
+        // Emit game status
+        io.emit('move', {
+          move,
+          timer,
+          isCheck,
+          isCheckmate,
+          isDraw,
+          isStalemate,
+          isInsufficientMaterial,
+          capturedPiece,
+          currentPiece
         });
+  
+        // If the game is over, end the game
+        if (isCheckmate || isDraw || isStalemate || isInsufficientMaterial) {
+          socket.emit('game-over', {
+            result: isCheckmate ? 'checkmate' : isDraw ? 'draw' : isStalemate ? 'stalemate' : 'insufficient material',
+          });
+        }
+      } else {
+        socket.emit('invalid-move', 'Invalid move');
       }
-    } else {
-      socket.emit('invalid-move', 'Invalid move');
+    } catch (error) {
+      io.emit('move', {
+        move:false,
+        timer:null,
+        isCheck:null,
+        isCheckmate:null,
+        isDraw:null,
+        isStalemate:null,
+        isInsufficientMaterial:null,
+        capturedPiece:null,
+      });
     }
   });
 

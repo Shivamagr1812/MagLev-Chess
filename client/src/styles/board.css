@@ -20,4 +20,9 @@
     color: white;
     font-size: 0.7rem;
     font-weight: bold;
+    scrollbar-width: none;
+}
+.frozen-board {
+    pointer-events: none; 
+    opacity: 0.5; 
 }
