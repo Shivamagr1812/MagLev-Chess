@@ -3,7 +3,10 @@ class Piece {
         this.color = color
     }
 }
+//this is a common class for all the pieces
 
+
+//instead of images for the pieces, text that looks exactly like the pieces is used.
 class Pawn extends Piece {
     constructor(color){
         super(color)
