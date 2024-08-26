@@ -19,6 +19,13 @@ const Board = ({grid})=>{
     //this variable is to initialize an empty board. Its and empty 2D Array
     const board = Array(8).fill(Array(8).fill(""));
 
+    useEffect(()=>{
+        console.log(movesHistory)
+    },[movesHistory])
+
+    useEffect(()=>{
+        console.log(dead)
+    },[dead])
 
     //connecting with the socket server
     useEffect(()=>{
@@ -40,18 +47,24 @@ const Board = ({grid})=>{
                 isStalemate: data.isStalemate,
                 isInsufficientMaterial: data.isInsufficientMaterial,
                 capturedPiece: data.capturedPiece,
-                currentPiece:data.currentPiece
+                currentPiece:data.currentPiece,
+                movesHistory:data.movesHistory
+                //preferably use to backend to manage movesHistory and dead array
             }
             //this is the format we are receiving the repsonse object from server. the data.move is false if the move sent is invalid
             const move=response.move
             //destructuring move will open serveral possibilities
             if(move){
-                setMovesHistory([...movesHistory , `${move.from}->${move.to}`])
+                setMovesHistory(response.movesHistory)
 
                 if(response.isCheck) alert('That is a Check!')
                 //checks for a check
 
-                if(response.capturedPiece) setDead([...dead , response.capturedPiece])
+                if(response.isCheckmate){
+                    alert('That is a Checkmate! Game Ends')
+                    navigate(-1)
+                }
+                if(response.capturedPiece) setDead(dead=>[...dead , `${move.color==='w'?'b':'w'}${response.capturedPiece}`])
                 //adds any dead piece to the dead state array
 
                 grid.set(`${move.to}`, response.currentPiece)
@@ -61,7 +74,10 @@ const Board = ({grid})=>{
                 setCurrent(null)
                 setError('')
             }
-            else setError('Invalid Move')
+            else {
+                setError('Invalid Move')
+                setCurrent(null)
+            }
         })
 
         newSocket.on('game-over' , (result)=>{

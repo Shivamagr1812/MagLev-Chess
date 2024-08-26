@@ -33,13 +33,14 @@ io.on('connection', (socket) => {
     timer: { white: 300, black: 300 }, // 5 minutes each
     currentPlayer: 'w',
     lastMoveTime: { white: Date.now(), black: Date.now() }, // Track last move times
+    movesHistory : []
   };
 
   // Handle move validation and game status updates
   socket.on('move', ({ sourceSquare, targetSquare , currentPiece }) => {
     //currentPiece moves from sourceSquare to targetSquare
     const game = games[gameId];
-    const { chess, timer, currentPlayer, lastMoveTime } = game;
+    const { chess, timer, currentPlayer, lastMoveTime} = game;
 
     // Validate the move
     try {
@@ -49,7 +50,7 @@ io.on('connection', (socket) => {
       });
       //this function thorws an error if the move is invalid that crashes the server. So putting up a try-catch block
       
-      if (move) {
+      if (move){
         // Calculate time spent on the current move
         const timeSpent = calculateTimeSpent(currentPlayer, lastMoveTime);
         timer[currentPlayer === 'w' ? 'white' : 'black'] -= timeSpent;
@@ -57,6 +58,9 @@ io.on('connection', (socket) => {
         // Update the last move time
         lastMoveTime[currentPlayer === 'w' ? 'white' : 'black'] = Date.now();
   
+        //add this move to the moveshistory array
+        (game.movesHistory).push(`${move.from}->${move.to}`)
+
         // Switch player
         game.currentPlayer = currentPlayer === 'w' ? 'b' : 'w';
   
@@ -80,7 +84,8 @@ io.on('connection', (socket) => {
           isStalemate,
           isInsufficientMaterial,
           capturedPiece,
-          currentPiece
+          currentPiece,
+          movesHistory:game.movesHistory
         });
   
         // If the game is over, end the game
