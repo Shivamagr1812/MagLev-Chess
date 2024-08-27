@@ -7,7 +7,8 @@ import io from 'socket.io-client';
 
 
 const Board = ({grid})=>{
-    const {movesHistory , setMovesHistory , dead , setDead, gameState , socket ,  setSocket} = useContext(GameContext)
+    const {setMovesHistory , setDead, gameState , socket ,  setSocket , 
+        gameId , setGameId , currentPlayer , setCurrentPlayer , start , setStart} = useContext(GameContext)
     const [current ,  setCurrent ]=useState(null)
     //the current state variable will store the piece selected and the columnIndex and rowIndex of that piece in an object
     const [error , setError] = useState("")
@@ -19,14 +20,49 @@ const Board = ({grid})=>{
     //this variable is to initialize an empty board. Its and empty 2D Array
     const board = Array(8).fill(Array(8).fill(""));
 
-
     //connecting with the socket server
     useEffect(()=>{
         const newSocket = io(URL)
         setSocket(newSocket)
+        newSocket.on('connect',()=>{
+            if(gameState === 'PlayerW'){
+                alert(`Game Id:${newSocket.id}\nShare it with the Black Player`) 
+                setGameId(newSocket.id)
+                console.log('White Player: Connection Established, Starting New Game')
+                //inform the server that the white player has initiated the game
+                newSocket.emit('white-joins')
 
-        newSocket.on('connect', ()=>{
-            console.log('Connection Established, Game Starts')
+            }else if(gameState === 'PlayerB'){
+
+                console.log(`Black Player: Connecting to Game with ID: ${gameId}`)
+                //inform the server that the black player wants to join
+                newSocket.emit('black-joins', {gameId})
+
+            }
+        })
+
+        newSocket.on('emit-id',(gameId)=>{
+            setGameId(gameId)
+            alert(`Game ID : ${gameId}\nShare it with the other player`)
+            console.log(gameId)
+            //get the gameId from the server for the white player. Black player will now put in the landing page and get in the game
+
+        })
+
+        newSocket.on('start-game' , (gameId)=>{
+
+            alert('Black Player joined the game.')
+            setStart(true)
+            //The other player joined the game. Now the game can start
+
+        })
+
+        newSocket.on('wrong-game',(gameId)=>{
+
+            setGameId(null)
+            alert('This Game has Already started.\nSeems like a Wrong Game!')
+            navigate(-1)
+
         })
 
         newSocket.on('move' , (data)=>{
@@ -40,28 +76,44 @@ const Board = ({grid})=>{
                 isStalemate: data.isStalemate,
                 isInsufficientMaterial: data.isInsufficientMaterial,
                 capturedPiece: data.capturedPiece,
-                currentPiece:data.currentPiece
+                currentPiece:data.currentPiece,
+                movesHistory:data.movesHistory,
+                //preferably use the backend to manage movesHistory
+                currentPlayer:data.currentPlayer
             }
+            setCurrentPlayer(response.currentPlayer)
             //this is the format we are receiving the repsonse object from server. the data.move is false if the move sent is invalid
+
             const move=response.move
             //destructuring move will open serveral possibilities
+
             if(move){
-                setMovesHistory([...movesHistory , `${move.from}->${move.to}`])
+                setMovesHistory(response.movesHistory)
 
                 if(response.isCheck) alert('That is a Check!')
                 //checks for a check
 
-                if(response.capturedPiece) setDead([...dead , response.capturedPiece])
+                if(response.isCheckmate){
+                    alert('That is a Checkmate! Game Ends')
+                    navigate(-1)
+                }
+
+                if(response.capturedPiece) setDead(dead=>[...dead , `${move.color==='w'?'b':'w'}${response.capturedPiece}`])
                 //adds any dead piece to the dead state array
 
                 grid.set(`${move.to}`, response.currentPiece)
-                //converting the coloumn index from number to alphabet with ASCII value to store in the map in the format of 'b7' after the new move.
+                //the move.to has the new position in the exact 'b7' type manner. Thus moving the piece to the new position
+
                 grid.set(`${move.from}`, null)
                 //putting value NULL for the key i.e. initial position of the piece
+
                 setCurrent(null)
                 setError('')
             }
-            else setError('Invalid Move')
+            else {
+                setError('Invalid Move')
+                setCurrent(null)
+            }
         })
 
         newSocket.on('game-over' , (result)=>{
@@ -93,12 +145,14 @@ const Board = ({grid})=>{
     //a function to emit move to the socket server
     const emitMove = ({sourceSquare , targetSquare , currentPiece})=>{
         if(!socket) return;
-        socket.emit('move' , {sourceSquare , targetSquare , currentPiece})
+        socket.emit('move' , {sourceSquare , targetSquare , currentPiece , gameId:gameId })
     }
 
-
-
     const handleClick = ({piece,columnIndex,rowIndex})=>{
+        if(gameState === 'PlayerW' && piece?.color==='black' && !current) return
+        if(gameState === 'PlayerB' && piece?.color==='white' && !current) return
+        if(currentPlayer === 'w' && gameState==='PlayerB') return
+        if(currentPlayer === 'b' && gameState === 'PlayerW') return
         if((!piece) && (!current)){
             setError('No piece on clicked box')
             return
@@ -113,6 +167,7 @@ const Board = ({grid})=>{
         if(current){
             const sourceSquare = `${String.fromCharCode(current.currColumn + 97)}${8-current.currRow}`
             const targetSquare = `${String.fromCharCode(columnIndex + 97)}${8-rowIndex}`
+            //converting the index position to the standard 'e7' type manner by ASCII valye
             emitMove({sourceSquare,targetSquare,currentPiece:current.piece})
             //sending the current piece to the server as it might be needed
             //the code that was here initially has been shifted to the newSocket.on('move') part because the state's update do not reflect instanly in the code 
@@ -124,8 +179,9 @@ const Board = ({grid})=>{
 
     return(
         (!gameState)?<><h1>Error 401!</h1></>:
+        ((!start)?<><h1>Wait for Black to join!</h1></>:
         <>
-        <h3>Against {gameState}</h3>
+        <h3>Against {gameState==='Computer'?'Computer':(gameState==='PlayerW'?'Black':'White')}</h3>
         <Moves/>
         <div className='board-outer-wrapper'>
             {board.map((line , rowIndex)=>{
@@ -152,7 +208,7 @@ const Board = ({grid})=>{
             })}
         </div>
         <div style={{color:'red',textAlign:'center'}}>{error}</div>
-        </>
+        </>)
     )
 }
 export default Board
