@@ -57,6 +57,7 @@ io.on('connection', (socket) => {
       games[gameId].playerIn = true
       // Black player joins the room with gameId
       console.log(`Black Player joined game with ID: ${gameId}`)
+      games[gameId].lastMoveTime={white: Date.now(), black: Date.now()}
       io.to(gameId).emit('start-game' , gameId)
 
     }else if(games[gameId] && games[gameId].playerIn){
@@ -119,7 +120,7 @@ io.on('connection', (socket) => {
           capturedPiece,
           currentPiece,
           movesHistory,
-          currentPlayer
+          currentPlayer:game.currentPlayer
         });
   
         // If the game is over, end the game

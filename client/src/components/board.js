@@ -7,7 +7,8 @@ import io from 'socket.io-client';
 
 
 const Board = ({grid})=>{
-    const {movesHistory , setMovesHistory , dead , setDead, gameState , socket ,  setSocket , gameId , setGameId} = useContext(GameContext)
+    const {setMovesHistory , setDead, gameState , socket ,  setSocket , 
+        gameId , setGameId , currentPlayer , setCurrentPlayer , start , setStart} = useContext(GameContext)
     const [current ,  setCurrent ]=useState(null)
     //the current state variable will store the piece selected and the columnIndex and rowIndex of that piece in an object
     const [error , setError] = useState("")
@@ -25,7 +26,7 @@ const Board = ({grid})=>{
         setSocket(newSocket)
         newSocket.on('connect',()=>{
             if(gameState === 'PlayerW'){
-                console.log(newSocket.id) 
+                alert(`Game Id:${newSocket.id}\nShare it with the Black Player`) 
                 setGameId(newSocket.id)
                 console.log('White Player: Connection Established, Starting New Game')
                 //inform the server that the white player has initiated the game
@@ -51,6 +52,7 @@ const Board = ({grid})=>{
         newSocket.on('start-game' , (gameId)=>{
 
             alert('Black Player joined the game.')
+            setStart(true)
             //The other player joined the game. Now the game can start
 
         })
@@ -79,6 +81,7 @@ const Board = ({grid})=>{
                 //preferably use the backend to manage movesHistory
                 currentPlayer:data.currentPlayer
             }
+            setCurrentPlayer(response.currentPlayer)
             //this is the format we are receiving the repsonse object from server. the data.move is false if the move sent is invalid
 
             const move=response.move
@@ -146,6 +149,10 @@ const Board = ({grid})=>{
     }
 
     const handleClick = ({piece,columnIndex,rowIndex})=>{
+        if(gameState === 'PlayerW' && piece?.color==='black' && !current) return
+        if(gameState === 'PlayerB' && piece?.color==='white' && !current) return
+        if(currentPlayer === 'w' && gameState==='PlayerB') return
+        if(currentPlayer === 'b' && gameState === 'PlayerW') return
         if((!piece) && (!current)){
             setError('No piece on clicked box')
             return
@@ -172,6 +179,7 @@ const Board = ({grid})=>{
 
     return(
         (!gameState)?<><h1>Error 401!</h1></>:
+        ((!start)?<><h1>Wait for Black to join!</h1></>:
         <>
         <h3>Against {gameState==='Computer'?'Computer':(gameState==='PlayerW'?'Black':'White')}</h3>
         <Moves/>
@@ -200,7 +208,7 @@ const Board = ({grid})=>{
             })}
         </div>
         <div style={{color:'red',textAlign:'center'}}>{error}</div>
-        </>
+        </>)
     )
 }
 export default Board
