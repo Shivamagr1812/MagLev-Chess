@@ -7,10 +7,13 @@ export const GameContextProvider = ({children})=>{
     const [start , setStart]=useState(false)
     const [movesHistory , setMovesHistory] = useState([])
     const [dead , setDead] = useState([])
+    const [depth , setDepth] = useState(5)
     const [gameState , setGameState] = useState(null)
     //gameState keeps the track whether the user is playing against another user or the computer
     return(
-        <GameContext.Provider value={{movesHistory , setMovesHistory , dead , setDead , gameState , setGameState, socket , setSocket , gameId , setGameId , currentPlayer , setCurrentPlayer , start , setStart}}>
+        <GameContext.Provider value={{movesHistory , setMovesHistory , dead , setDead ,
+         gameState , setGameState, socket , setSocket , gameId , setGameId , currentPlayer , setCurrentPlayer , 
+         start , setStart , depth , setDepth}}>
             {children}
         </GameContext.Provider>
     )
