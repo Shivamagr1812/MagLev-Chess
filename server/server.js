@@ -8,13 +8,13 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server , {
   cors: {
-    origin: "http://localhost:3000",
+    origin: "https://mag-lev-chess.vercel.app",
     methods: ["GET", "POST"]
   }
 });
 
 const corsOptions = {
-  origin: ['http://localhost:3000','http://localhost:3000/game-page'],
+  origin: ['https://mag-lev-chess.vercel.app','https://mag-lev-chess.vercel.app/game-page'],
   optionsSuccessStatus: 200
 }
 app.use(cors(corsOptions))
