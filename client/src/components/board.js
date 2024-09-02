@@ -8,10 +8,10 @@ import io from 'socket.io-client';
 
 const Board = ({grid})=>{
     const {setMovesHistory , setDead, gameState , socket ,  setSocket , 
-        gameId , setGameId , currentPlayer , setCurrentPlayer , start , setStart} = useContext(GameContext)
+        gameId , setGameId , currentPlayer , setCurrentPlayer , start , setStart , depth} = useContext(GameContext)
     const [current ,  setCurrent ]=useState(null)
+    const [info , setInfo] = useState("")
     //the current state variable will store the piece selected and the columnIndex and rowIndex of that piece in an object
-    const [error , setError] = useState("")
     const navigate = useNavigate()
 
     //this URL is for coonecting with the server using websockets
@@ -26,11 +26,11 @@ const Board = ({grid})=>{
         setSocket(newSocket)
         newSocket.on('connect',()=>{
             if(gameState === 'PlayerW'){
-                alert(`Game Id:${newSocket.id}\nShare it with the Black Player`) 
                 setGameId(newSocket.id)
                 console.log('White Player: Connection Established, Starting New Game')
                 //inform the server that the white player has initiated the game
                 newSocket.emit('white-joins')
+                setInfo(`Game Id:${newSocket.id}\nShare it with the Black Player`) 
 
             }else if(gameState === 'PlayerB'){
 
@@ -38,20 +38,25 @@ const Board = ({grid})=>{
                 //inform the server that the black player wants to join
                 newSocket.emit('black-joins', {gameId})
 
+            }else if(gameState === 'Computer'){
+
+                newSocket.emit('vsComputer-joins' , depth)
+                //handles when someone chooses to play against computer
+
             }
         })
 
-        newSocket.on('emit-id',(gameId)=>{
-            setGameId(gameId)
-            alert(`Game ID : ${gameId}\nShare it with the other player`)
-            console.log(gameId)
-            //get the gameId from the server for the white player. Black player will now put in the landing page and get in the game
+        // newSocket.on('emit-id',(gameId)=>{
+        //     setGameId(gameId)
+        //     setInfo(`Game ID : ${gameId}\nShare it with the other player`)
+        //     console.log(gameId)
+        //     //get the gameId from the server for the white player. Black player will now put in the landing page and get in the game
 
-        })
+        // })
 
         newSocket.on('start-game' , (gameId)=>{
 
-            alert('Black Player joined the game.')
+            setInfo('Black Player joined the game.')
             setStart(true)
             //The other player joined the game. Now the game can start
 
@@ -63,6 +68,13 @@ const Board = ({grid})=>{
             alert('This Game has Already started.\nSeems like a Wrong Game!')
             navigate(-1)
 
+        })
+
+        newSocket.on('vsComputer-start' , (gameId)=>{
+
+            setGameId(gameId)
+            setStart(true)
+            console.log(`Gaem Starts vs Computer at id ${gameId}`)
         })
 
         newSocket.on('move' , (data)=>{
@@ -90,11 +102,11 @@ const Board = ({grid})=>{
             if(move){
                 setMovesHistory(response.movesHistory)
 
-                if(response.isCheck) alert('That is a Check!')
+                if(response.isCheck) setInfo('That is a Check!')
                 //checks for a check
 
                 if(response.isCheckmate){
-                    alert('That is a Checkmate! Game Ends')
+                    setInfo('That is a Checkmate! Game Ends')
                     navigate(-1)
                 }
 
@@ -108,10 +120,10 @@ const Board = ({grid})=>{
                 //putting value NULL for the key i.e. initial position of the piece
 
                 setCurrent(null)
-                setError('')
+                setInfo('')
             }
             else {
-                setError('Invalid Move')
+                setInfo('Invalid Move')
                 setCurrent(null)
             }
         })
@@ -127,7 +139,16 @@ const Board = ({grid})=>{
 
         newSocket.on('connect_error', (error) => {
             alert('Some Error Occured. Game Frozen while error is fixed')
-            setError('Server Error or Network Error')
+            setInfo('Server Error or Network Error')
+        })
+
+        newSocket.on('computer-move-receiver' , ({bestMove ,gameId})=>{
+            const sourceSquare = bestMove.slice(0,2)
+            const targetSquare = bestMove.slice(2,4)
+            const currentPiece = grid.get(bestMove.slice( 0 , 2 ))
+            const flagComputer = true
+            // emitMove({sourceSquare,targetSquare,currentPiece,flagComputer})
+            newSocket.emit('move' , {sourceSquare,targetSquare,currentPiece,gameId:gameId,flagComputer})
         })
 
         // newSocket.on('disconnect' , (error)=>{
@@ -143,9 +164,11 @@ const Board = ({grid})=>{
     },[])
 
     //a function to emit move to the socket server
-    const emitMove = ({sourceSquare , targetSquare , currentPiece})=>{
-        if(!socket) return;
-        socket.emit('move' , {sourceSquare , targetSquare , currentPiece , gameId:gameId })
+    function emitMove({sourceSquare , targetSquare , currentPiece , flagComputer }){
+        setInfo("")
+        if(!socket) return
+        console.log({sourceSquare , targetSquare , currentPiece , flagComputer})
+        socket.emit('move' , {sourceSquare , targetSquare , currentPiece , gameId:gameId , flagComputer })
     }
 
     const handleClick = ({piece,columnIndex,rowIndex})=>{
@@ -154,7 +177,7 @@ const Board = ({grid})=>{
         if(currentPlayer === 'w' && gameState==='PlayerB') return
         if(currentPlayer === 'b' && gameState === 'PlayerW') return
         if((!piece) && (!current)){
-            setError('No piece on clicked box')
+            setInfo('No piece on clicked box')
             return
         } 
         
@@ -168,20 +191,26 @@ const Board = ({grid})=>{
             const sourceSquare = `${String.fromCharCode(current.currColumn + 97)}${8-current.currRow}`
             const targetSquare = `${String.fromCharCode(columnIndex + 97)}${8-rowIndex}`
             //converting the index position to the standard 'e7' type manner by ASCII valye
-            emitMove({sourceSquare,targetSquare,currentPiece:current.piece})
+            emitMove({sourceSquare,targetSquare,currentPiece:current.piece,flagComputer:false})
             //sending the current piece to the server as it might be needed
             //the code that was here initially has been shifted to the newSocket.on('move') part because the state's update do not reflect instanly in the code 
             return
         }
         setCurrent({piece:piece , currRow:rowIndex , currColumn:columnIndex})
-        setError('')
+        setInfo('')
     }
 
     return(
         (!gameState)?<><h1>Error 401!</h1></>:
-        ((!start)?<><h1>Wait for Black to join!</h1></>:
+        ((!start)?<>
+        <h1>Wait for Black to join!</h1>
+        <div style={{widht:'20px',fontSize:'1rem',fontWeight:'bold'}}>{info}</div>
+        </>:
         <>
-        <h3>Against {gameState==='Computer'?'Computer':(gameState==='PlayerW'?'Black':'White')}</h3>
+        <div style={{display:'flex',justifyContent:'space-between'}}>
+        <div style={{fontWeight:'bold'}}>Against {gameState==='Computer'?'Computer':(gameState==='PlayerW'?'Black':'White')}</div>
+        <div style={{widht:'60px',fontSize:'1rem',color:'red'}}>{info}</div>
+        </div>
         <Moves/>
         <div className='board-outer-wrapper'>
             {board.map((line , rowIndex)=>{
@@ -198,7 +227,7 @@ const Board = ({grid})=>{
                             style = {{backgroundColor:color,color:(!piece)?'':`${piece.color}`,
                             textShadow:(!piece || piece.color==='black')?'':'0px 0px 3px black' ,
                             border:(current?.currRow === rowIndex && current?.currColumn === columnIndex)?'1px solid white':'1px solid black'}}
-                            onClick={()=>{handleClick({piece:piece , columnIndex:columnIndex , rowIndex:rowIndex})}}>
+                            onClick={()=>{handleClick({piece:piece , columnIndex:columnIndex , rowIndex:rowIndex })}}>
                                 {(!piece)?'':piece.icon}
                             </div>
                         )
@@ -207,7 +236,7 @@ const Board = ({grid})=>{
                 )
             })}
         </div>
-        <div style={{color:'red',textAlign:'center'}}>{error}</div>
+        {/* <div style={{color:'red',textAlign:'center'}}>{error}</div> */}
         </>)
     )
 }
