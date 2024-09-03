@@ -2,21 +2,20 @@ const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
 const { Chess } = require('chess.js');
-const cors =require('cors');
-const e = require('express');
-const { copyFileSync } = require('fs');
+const cors =require('cors')
+const { LOCALHOST_URL, DEPLOYED_URL } = require('./constants');
 
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server , {
   cors: {
-    origin: "https://mag-lev-chess.vercel.app",
+    origin: [LOCALHOST_URL, DEPLOYED_URL],
     methods: ["GET", "POST"]
   }
 });
 
 const corsOptions = {
-  origin: ['https://mag-lev-chess.vercel.app','https://mag-lev-chess.vercel.app/game-page'],
+  origin: [LOCALHOST_URL, DEPLOYED_URL, LOCALHOST_URL + '/game-page', DEPLOYED_URL + '/game-page'],
   optionsSuccessStatus: 200
 }
 app.use(cors(corsOptions))
