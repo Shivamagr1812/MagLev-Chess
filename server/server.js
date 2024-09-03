@@ -20,6 +20,11 @@ const corsOptions = {
 }
 app.use(cors(corsOptions))
 
+// display a server running message
+app.get('/', (req, res) => {
+  res.send('Server is running');
+});
+
 // Store game states
 const games = {};
 
