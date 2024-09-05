@@ -24,7 +24,8 @@ const Board = ({grid})=>{
     const navigate = useNavigate()
 
     //this URL is for connecting with the server using websockets
-    const URL = 'https://maglev-chess-backend.onrender.com/'
+    // const URL = 'https://maglev-chess-backend.onrender.com/'
+    const URL = 'http://localhost:5000'
 
     //this variable is to initialize an empty board. Its and empty 2D Array
     const board = Array(8).fill(Array(8).fill(""));
