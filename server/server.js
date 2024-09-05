@@ -260,6 +260,13 @@ io.on('connection', (socket) => {
   });
 
 
+  socket.on('forfiet-game' , (gameState)=>{
+    const winner = gameState==='Against White'?'White':'Black'
+    const forfieted = winner === 'White'?'Black':'White'
+    socket.emit('forfiet-game' , {winner , forfieted})
+    delete games[socket.id]
+  })
+
 
 
   socket.on('disconnect', () => {

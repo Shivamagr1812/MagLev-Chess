@@ -26,3 +26,17 @@
     pointer-events: none; 
     opacity: 0.5; 
 }
+
+.forfiet-btn-wrapper{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.forfiet-btn{
+    background-color: red;
+    border: none;
+    border-radius: 5px;
+    color: white;
+    padding: 5px 10px;
+    width: fit-content;
+}

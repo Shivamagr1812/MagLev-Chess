@@ -24,8 +24,8 @@ const Board = ({grid})=>{
     const navigate = useNavigate()
 
     //this URL is for connecting with the server using websockets
-    // const URL = 'https://maglev-chess-backend.onrender.com/'
-    const URL = 'http://localhost:5000'
+    const URL = 'https://maglev-chess-backend.onrender.com/'
+    // const URL = 'http://localhost:5000'
 
     //this variable is to initialize an empty board. Its and empty 2D Array
     const board = Array(8).fill(Array(8).fill(""));
@@ -181,6 +181,11 @@ const Board = ({grid})=>{
             newSocket.emit('move' , {sourceSquare,targetSquare,currentPiece,gameId:gameId,flagComputer})
         })
 
+        newSocket.on('forfiet-game' , ({winner , forfieted})=>{
+            alert(`Game Forfieted by ${forfieted}\n${winner} Wins!!`)
+            navigate(-1)
+        })
+
         // newSocket.on('disconnect' , (error)=>{
         //     console.log('error')
         //     setIsDisconnected(true)
@@ -210,6 +215,11 @@ const Board = ({grid})=>{
     const handlePromotionMove = (promotedTo)=>{
         setPromotePawn(false)
         emitMove({...promotionMove , promotion:promotedTo , flagComputer:false})
+    }
+
+    const handleForfiet=()=>{
+        if(!socket) return
+        socket.emit('forfiet-game' , gameState)
     }
 
     const handleClick = ({piece,columnIndex,rowIndex})=>{
@@ -283,6 +293,7 @@ const Board = ({grid})=>{
             })}
         </div>
         {((gameState === 'Against Black' && currentPlayer === 'w') || (gameState === 'Against White' && currentPlayer === 'b')) && <Castling castling={castling} handleCastleMove={handleCastleMove}/>}
+        <div className='forfiet-btn-wrapper'><button className='forfiet-btn'  onClick={()=>{handleForfiet()}}>FORFIET</button></div>
         </>)
     )
 }
