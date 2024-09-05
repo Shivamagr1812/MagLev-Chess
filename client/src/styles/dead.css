@@ -1,0 +1,14 @@
+.dead-white-piece{
+    color:rgb(255, 255, 255);
+    -webkit-text-stroke: 1px black;
+    font-size: 3rem;
+}
+.dead-black-piece{
+    color: #000000;
+    font-size: 3rem;
+}
+.dead-piece-wrapper{
+    display: flex;
+    flex-direction:column;
+    margin-top: 10vh;
+}

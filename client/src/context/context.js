@@ -3,6 +3,7 @@ export const GameContext = createContext()
 export const GameContextProvider = ({children})=>{
     const [socket , setSocket]=useState(null)
     const [gameId , setGameId]=useState(null)
+    const [timer , setTimer]=useState({ white: 300, black: 300 })
     const [currentPlayer , setCurrentPlayer] = useState('w')
     const [start , setStart]=useState(false)
     const [movesHistory , setMovesHistory] = useState([])
@@ -13,7 +14,7 @@ export const GameContextProvider = ({children})=>{
     return(
         <GameContext.Provider value={{movesHistory , setMovesHistory , dead , setDead ,
          gameState , setGameState, socket , setSocket , gameId , setGameId , currentPlayer , setCurrentPlayer , 
-         start , setStart , depth , setDepth}}>
+         start , setStart , depth , setDepth , timer , setTimer }}>
             {children}
         </GameContext.Provider>
     )

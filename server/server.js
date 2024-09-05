@@ -3,8 +3,9 @@ const http = require('http');
 const socketIo = require('socket.io');
 const { Chess } = require('chess.js');
 const cors =require('cors');
-const e = require('express');
-const { copyFileSync } = require('fs');
+const calculateTimeSpent = require('./utils/timeSpent.js')
+const checkCastling = require('./utils/checkCastling.js')
+const getMoveFromStockfish = require('./utils/moveStockfish.js')
 
 const app = express();
 const server = http.createServer(app);
@@ -112,22 +113,47 @@ io.on('connection', (socket) => {
 
 
   // Handle move validation and game status updates
-  socket.on('move', async ({ sourceSquare, targetSquare , currentPiece , gameId , flagComputer }) => {
+  socket.on('move', async ({ sourceSquare, targetSquare , currentPiece , gameId , flagComputer , promotion , castleMove }) => {
+    //castleMove incase the player wants to make a castling move
     //flagComputer is used to distinguish the move of the Computer i.e. Stcokfish from the the move of player.
     //currentPiece moves from sourceSquare to targetSquare
+
     const game = games[gameId];
-    console.log(gameId)
     const { chess, timer, currentPlayer, lastMoveTime, movesHistory } = game;
+    try {
+      //if request for castling comes, then enters in this
+      if(castleMove){
+        if(currentPlayer === 'w' && castleMove ==='K'){
+          sourceSquare = 'e1'
+          targetSquare = 'g1'
+        }
+        else if(currentPlayer === 'w' && castleMove ==='Q'){
+          sourceSquare = 'e1'
+          targetSquare = 'c1'
+        } 
+        else if(currentPlayer === 'b' && castleMove ==='K'){
+          sourceSquare = 'e8'
+          targetSquare = 'g8'
+        } 
+        else if(currentPlayer === 'b' && castleMove ==='Q'){
+          sourceSquare = 'e8'
+          targetSquare = 'c8'
+        } 
+        if(currentPlayer === 'w') castleMove = castleMove.toUpperCase()
+      }
 
     // Validate the move
-    try {
       const move = chess.move({
         from: sourceSquare,
         to: targetSquare,
+        promotion: promotion
       });
-      //this function thorws an error if the move is invalid that crashes the server. So putting up a try-catch block
+      //this function thorws an error if the move is invalid; that crashes the server. So putting up a try-catch block
 
       if (move){
+        //example for FEN string - r1bqkbnr/pppppppp/2n5/8/8/2N5/PPPPPPPP/R1BQKBNR w KQkq - 2 2 stored in move.after
+        const currentFEN = move.after
+
         // Calculate time spent on the current move
         const timeSpent = calculateTimeSpent(currentPlayer, lastMoveTime);
         timer[currentPlayer === 'w' ? 'white' : 'black'] -= timeSpent;
@@ -151,6 +177,9 @@ io.on('connection', (socket) => {
         // Check if there was an opponent's piece captured
         const capturedPiece = move.captured ? move.captured.toUpperCase() : null;
   
+        //check for availability of castling with the utility function for the next move
+        const castling = checkCastling(currentFEN , game)
+        
         // Emit game status
         io.to(gameId).emit('move', {
           move,
@@ -163,10 +192,13 @@ io.on('connection', (socket) => {
           capturedPiece,
           currentPiece,
           movesHistory,
-          currentPlayer:game.currentPlayer
+          currentPlayer:game.currentPlayer,
+          castling,
+          castleMove
+          //difference between castleMove and castling - castleMove stores the castle that happened in this move(if any) whereas castling stores the possibility of castling in the next move
         });
 
-        // If the game is over, end the game
+        // If the game is over, emit end the game
         if (isCheckmate || isDraw || isStalemate || isInsufficientMaterial) {
           socket.emit('game-over', {
             result: isCheckmate ? 'checkmate' : isDraw ? 'draw' : isStalemate ? 'stalemate' : 'insufficient material',
@@ -174,11 +206,12 @@ io.on('connection', (socket) => {
         }
 
         //never gets in this for multiplayer since PvP will be false. 
+        //only gets in this when the user in PvC has played a move and it is the turn of the computer to play a move
         if(!game.PvP && !flagComputer){
 
           //this move.after is having FEN string that will be sent to the stockfish api
           //rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
-          const {bestMove , moveStockfish , currentPlayer , gameEnding , mate , error}
+          const {bestMove , error}
           = await getMoveFromStockfish({fen:move.after , depth:game.depth})
           
           if(error) throw new Error('Some Internal error in Fetching move from Stockfish')
@@ -194,13 +227,6 @@ io.on('connection', (socket) => {
     } catch (error) {
       io.to(gameId).emit('move', {
         move:false,
-        timer:null,
-        isCheck:null,
-        isCheckmate:null,
-        isDraw:null,
-        isStalemate:null,
-        isInsufficientMaterial:null,
-        capturedPiece:null,
       });
     }
   });
@@ -220,40 +246,3 @@ io.on('connection', (socket) => {
 server.listen(5000, () => {
   console.log('listening on *:5000');
 });
-
-// Utility function to calculate time spent by a player
-function calculateTimeSpent(player, lastMoveTime) {
-  const now = Date.now();
-  const opponentColor = player === 'b' ? 'white' : 'black';
-  const timeSpent = Math.floor((now - lastMoveTime[opponentColor]) / 1000); // Time spent in seconds
-  return timeSpent;
-}
-
-//Utility function to get the bestMove by calling the api
-const getMoveFromStockfish = async ({depth , fen})=>{
-  try {
-    const STOCKFISH_API = `https://stockfish.online/api/s/v2.php?fen=${encodeURIComponent(fen)}&depth=${depth}`
-    const response  = await fetch( STOCKFISH_API )
-    //{success : Boolean  , bestmove: "bestmove b7b6" , evaluation : Number , continuation : String , mate: :| }
-    const data = await response.json()
-    
-    if(!data.success) throw new Error('Something went wrong')
-    const bestMove = data.bestmove.split(" ")[1]
-    const color = fen.split(" ")[1] 
-    const currentPlayer = (color === 'w')? 'b':'w'
-
-    const chessNew = new Chess(fen)
-    const moveStockfish = chessNew.move({
-      from:bestMove.slice(0 , 2),
-      to:bestMove.slice(2 , 4)
-    })
-
-    let gameEnding = false
-    //checking if there is a bestmove or the game is at some game-ending condition.
-    if(isNaN(Number(bestMove.charAt(1))))  gameEnding=true
-
-    return { bestMove , moveStockfish , currentPlayer , gameEnding  , mate:data.mate , error:false}
-  } catch (error) {
-    return {move:false , bestMove:false , currentPlayer:null , gameEnding:null , mate:null , error:true}
-  }
-}

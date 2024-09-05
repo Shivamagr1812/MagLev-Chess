@@ -1,15 +1,24 @@
 import  '../styles/board.css'
+import '../styles/pawnPromotion.css'
+import '../styles/dead.css'
 import {useContext, useEffect, useState} from 'react'
 import {useNavigate} from 'react-router-dom'
+import PawnPromote from './pawnPromote.js'
 import Moves from './moves.js'
+import Castling from './castling.js'
+import {Bishop, Knight, Queen, Rook} from  '../class/piece.js'
 import { GameContext } from '../context/context.js'
 import io from 'socket.io-client';
+import Timer from './timer.js'
 
 
 const Board = ({grid})=>{
-    const {setMovesHistory , setDead, gameState , socket ,  setSocket , 
+    const {setMovesHistory , setDead, gameState , socket ,  setSocket , timer ,  setTimer , 
         gameId , setGameId , currentPlayer , setCurrentPlayer , start , setStart , depth} = useContext(GameContext)
     const [current ,  setCurrent ]=useState(null)
+    const [promotePawn , setPromotePawn]=useState(false)
+    const [promotionMove , setPromotionMove]=useState(null)
+    const [castling , setCastling] = useState({})
     const [info , setInfo] = useState("")
     //the current state variable will store the piece selected and the columnIndex and rowIndex of that piece in an object
     const navigate = useNavigate()
@@ -77,23 +86,11 @@ const Board = ({grid})=>{
             console.log(`Gaem Starts vs Computer at id ${gameId}`)
         })
 
-        newSocket.on('move' , (data)=>{
-            console.log(data)
-            const response = {
-                move:data.move,
-                timer:data.timer,
-                isCheck: data.isCheck,
-                isCheckmate: data.isCheckmate,
-                isDraw: data.isDraw,
-                isStalemate: data.isStalemate,
-                isInsufficientMaterial: data.isInsufficientMaterial,
-                capturedPiece: data.capturedPiece,
-                currentPiece:data.currentPiece,
-                movesHistory:data.movesHistory,
-                //preferably use the backend to manage movesHistory
-                currentPlayer:data.currentPlayer
-            }
+        newSocket.on('move' , (response)=>{
+            console.log(response)
+        
             setCurrentPlayer(response.currentPlayer)
+            setTimer(response.timer)
             //this is the format we are receiving the repsonse object from server. the data.move is false if the move sent is invalid
 
             const move=response.move
@@ -101,6 +98,13 @@ const Board = ({grid})=>{
 
             if(move){
                 setMovesHistory(response.movesHistory)
+
+                //promoting pawn
+                setPromotePawn(false)
+                if(move.promotion === 'q') response.currentPiece = new Queen(response.currentPiece.color)
+                else if(move.promotion === 'r') response.currentPiece = new Rook(response.currentPiece.color)
+                else if(move.promotion === 'n') response.currentPiece = new Knight(response.currentPiece.color)
+                else if(move.promotion === 'b') response.currentPiece = new Bishop(response.currentPiece.color)
 
                 if(response.isCheck) setInfo('That is a Check!')
                 //checks for a check
@@ -118,6 +122,31 @@ const Board = ({grid})=>{
 
                 grid.set(`${move.from}`, null)
                 //putting value NULL for the key i.e. initial position of the piece
+
+                //moving the rook if castling was successful
+                if(response.castleMove === 'K'){
+                    const rook = grid.get('h1')
+                    grid.set('h1' , null)
+                    grid.set('f1' , rook)
+                }
+                else if(response.castleMove === 'Q'){
+                    const rook = grid.get('a1')
+                    grid.set('a1' , null)
+                    grid.set('d1' , rook)
+                }
+                else if(response.castleMove === 'k'){
+                    const rook = grid.get('h8')
+                    grid.set('h8' , null)
+                    grid.set('f8' , rook)
+                }
+                else if(response.castleMove === 'q'){
+                    const rook = grid.get('a8')
+                    grid.set('a8' , null)
+                    grid.set('d8' , rook)
+                }
+
+                //ensures if castling in now possible or not
+                setCastling(response.castling)
 
                 setCurrent(null)
                 setInfo('')
@@ -164,11 +193,22 @@ const Board = ({grid})=>{
     },[])
 
     //a function to emit move to the socket server
-    function emitMove({sourceSquare , targetSquare , currentPiece , flagComputer }){
+    function emitMove({sourceSquare , targetSquare , currentPiece , promotion=null , flagComputer , castleMove }){
         setInfo("")
         if(!socket) return
-        console.log({sourceSquare , targetSquare , currentPiece , flagComputer})
-        socket.emit('move' , {sourceSquare , targetSquare , currentPiece , gameId:gameId , flagComputer })
+        socket.emit('move' , {sourceSquare , targetSquare , currentPiece , gameId:gameId , flagComputer , promotion , castleMove})
+    }
+
+    //a function to emit the message for castle
+    function handleCastleMove(castleMove) {
+        if(!socket) return
+        setCastling({})
+        emitMove({sourceSquare:null , targetSquare:null , currentPiece:null , promotion:null , flagComputer:false , castleMove:castleMove})
+    }
+
+    const handlePromotionMove = (promotedTo)=>{
+        setPromotePawn(false)
+        emitMove({...promotionMove , promotion:promotedTo , flagComputer:false})
     }
 
     const handleClick = ({piece,columnIndex,rowIndex})=>{
@@ -191,7 +231,10 @@ const Board = ({grid})=>{
             const sourceSquare = `${String.fromCharCode(current.currColumn + 97)}${8-current.currRow}`
             const targetSquare = `${String.fromCharCode(columnIndex + 97)}${8-rowIndex}`
             //converting the index position to the standard 'e7' type manner by ASCII valye
-            emitMove({sourceSquare,targetSquare,currentPiece:current.piece,flagComputer:false})
+            if(((targetSquare[1]==='1' && sourceSquare[1]==='2') || (targetSquare[1]==='8' && sourceSquare[1]==='7')) && current?.piece.type === 'Pawn' ){
+                setPromotePawn(true)
+                setPromotionMove({sourceSquare , targetSquare , currentPiece:current.piece})
+            }else emitMove({sourceSquare,targetSquare,currentPiece:current.piece,promotion:null,flagComputer:false})
             //sending the current piece to the server as it might be needed
             //the code that was here initially has been shifted to the newSocket.on('move') part because the state's update do not reflect instanly in the code 
             return
@@ -207,6 +250,8 @@ const Board = ({grid})=>{
         <div style={{widht:'20px',fontSize:'1rem',fontWeight:'bold'}}>{info}</div>
         </>:
         <>
+        {promotePawn && <PawnPromote handlePromotionMove={handlePromotionMove}/>}
+        <Timer/>
         <div style={{display:'flex',justifyContent:'space-between'}}>
         <div style={{fontWeight:'bold'}}>Against {gameState==='Computer'?'Computer':(gameState==='PlayerW'?'Black':'White')}</div>
         <div style={{widht:'60px',fontSize:'1rem',color:'red'}}>{info}</div>
@@ -236,7 +281,7 @@ const Board = ({grid})=>{
                 )
             })}
         </div>
-        {/* <div style={{color:'red',textAlign:'center'}}>{error}</div> */}
+        {((gameState === 'Against Black' && currentPlayer === 'w') || (gameState === 'Against White' && currentPlayer === 'b')) && <Castling castling={castling} handleCastleMove={handleCastleMove}/>}
         </>)
     )
 }
