@@ -23,8 +23,8 @@ const Board = ({grid})=>{
     //the current state variable will store the piece selected and the columnIndex and rowIndex of that piece in an object
     const navigate = useNavigate()
 
-    //this URL is for coonecting with the server using websockets
-    const URL = 'http://localhost:5000'
+    //this URL is for connecting with the server using websockets
+    const URL = 'https://maglev-chess-backend.onrender.com/'
 
     //this variable is to initialize an empty board. Its and empty 2D Array
     const board = Array(8).fill(Array(8).fill(""));

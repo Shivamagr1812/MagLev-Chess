@@ -6,21 +6,27 @@ const cors =require('cors');
 const calculateTimeSpent = require('./utils/timeSpent.js')
 const checkCastling = require('./utils/checkCastling.js')
 const getMoveFromStockfish = require('./utils/moveStockfish.js')
+const { LOCALHOST_URL, DEPLOYED_URL } = require('./constants');
 
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server , {
   cors: {
-    origin: "http://localhost:3000",
+    origin: [LOCALHOST_URL, DEPLOYED_URL],
     methods: ["GET", "POST"]
   }
 });
 
 const corsOptions = {
-  origin: ['http://localhost:3000','http://localhost:3000/game-page'],
+  origin: [LOCALHOST_URL, DEPLOYED_URL, LOCALHOST_URL + '/game-page', DEPLOYED_URL + '/game-page'],
   optionsSuccessStatus: 200
 }
 app.use(cors(corsOptions))
+
+// display a server running message
+app.get('/', (req, res) => {
+  res.send('Server is running');
+});
 
 // Store game states
 const games = {};
