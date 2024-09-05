@@ -1,4 +1,6 @@
 import Board from "../../components/board"
+import DeadBlack from "../../components/deadBlack.js"
+import DeadWhite from "../../components/deadWhite.js"
 import {Pawn , King , Queen , Rook , Knight , Bishop} from '../../class/piece.js'
 
 const Game = ()=>{
@@ -34,9 +36,13 @@ const Game = ()=>{
     grid.set('e8', new King('black'));
 
     return(
-        <>
+        <div style={{display:'flex',justifyContent:'center'}}>
+            <DeadBlack/>
+            <div>
             <Board grid={grid}/>
-        </>
+            </div>
+            <DeadWhite/>
+        </div>
     )
 }
 

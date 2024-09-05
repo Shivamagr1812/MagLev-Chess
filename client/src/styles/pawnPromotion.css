@@ -1,0 +1,31 @@
+.pawnPromote-options-wrapper{
+    display: flex;
+    flex-wrap: wrap;
+    padding: 0px;
+    justify-content: space-between;
+    align-items: center;
+    list-style: none;
+}
+.pawnPromote-options-wrapper li{
+    font-size: 5rem;
+    width: 30%;
+    color: rgb(125, 73, 14);
+    cursor: pointer;
+    text-align: center;
+    border: 2px solid black;
+    margin: calc(5% + 20px);
+}
+.pawnPromote-dialog-wrapper{
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    /* align-items: center; */
+    position: absolute;
+}
+.pawnPromote-dialog-box{
+    width: max-content;
+    padding: 20px;
+    height: max-content;
+    background-color: white;
+    box-shadow: 0px 0px 10px black;
+}
