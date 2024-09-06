@@ -1,10 +1,15 @@
-import { useContext } from 'react'
+import { useContext, useEffect } from 'react'
 import '../../styles/landing.css'
 import { GameContext } from '../../context/context'
 import { useNavigate } from 'react-router-dom'
 const Landing = ()=>{
-    const {setGameState , setGameId , setDepth} = useContext(GameContext)
+    const {setGameState , gameId ,setGameId , setDepth , setStart , start} = useContext(GameContext)
     const navigate = useNavigate()
+
+    useEffect(()=>{
+        console.log(start)
+        setStart(false)
+    },[])
     const handleComputer = ()=>{
         setGameState('Computer')
         navigate('/game-page')
@@ -14,6 +19,7 @@ const Landing = ()=>{
         navigate('/game-page')
     }
     const handlePlayerB = ()=>{
+        if(!gameId) return
         setGameState('PlayerB')
         navigate('/game-page')
     }
