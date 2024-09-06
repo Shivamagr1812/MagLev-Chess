@@ -260,11 +260,11 @@ io.on('connection', (socket) => {
   });
 
 
-  socket.on('forfiet-game' , (gameState)=>{
-    const winner = gameState==='Against White'?'White':'Black'
+  socket.on('forfiet-game' , ({gameState , gameId})=>{
+    const winner = gameState==='PlayerB'?'White':'Black'
     const forfieted = winner === 'White'?'Black':'White'
-    socket.emit('forfiet-game' , {winner , forfieted})
-    delete games[socket.id]
+    io.to(gameId).emit('forfiet-game' , {winner , forfieted})
+    delete games[gameId]
   })
 
 
