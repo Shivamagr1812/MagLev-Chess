@@ -5,7 +5,6 @@ const checkCastling = (currentFEN , game)=>{
     if(currentFEN.split(" ")[2] !== '-'){
       //get the position of the piece of the nextPlayer from the FEN String
       const pos = (currentFEN.split(" ")[0]).split("/")[game.currentPlayer==='b'?0:7].toUpperCase()
-      console.log(pos)
   
       //check if there are any pieces between King and King Side Rook
       kingSideCastling = (pos.slice(5 , 7) === '11')?kingSideCastling : false

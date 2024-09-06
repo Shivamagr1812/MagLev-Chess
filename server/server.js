@@ -126,6 +126,7 @@ io.on('connection', (socket) => {
 
     const game = games[gameId];
     const { chess, timer, currentPlayer, lastMoveTime, movesHistory } = game;
+    console.log(chess.fen())
     try {
       //if request for castling comes, then enters in this
       if(castleMove){
@@ -231,12 +232,40 @@ io.on('connection', (socket) => {
         socket.emit('invalid-move', 'Invalid move');
       }
     } catch (error) {
+
+      // Calculate time spent on the current move
+      const timeSpent = calculateTimeSpent(currentPlayer, lastMoveTime);
+      timer[currentPlayer === 'w' ? 'white' : 'black'] -= timeSpent;
+
+      const currentFEN = chess.fen()
+      console.log(currentFEN)
+      const castling = checkCastling(currentFEN , game)
+
       io.to(gameId).emit('move', {
         move:false,
+        timer,
+        isCheck:null,
+        isCheckmate:null,
+        isDraw:null,
+        isStalemate:null,
+        isInsufficientMaterial:null,
+        capturedPiece:null,
+        currentPiece:null,
+        movesHistory:null,
+        currentPlayer:game.currentPlayer,
+        castling,
+        castleMove:null
       });
     }
   });
 
+
+  socket.on('forfiet-game' , ({gameState , gameId})=>{
+    const winner = gameState==='PlayerB'?'White':'Black'
+    const forfieted = winner === 'White'?'Black':'White'
+    io.to(gameId).emit('forfiet-game' , {winner , forfieted})
+    delete games[gameId]
+  })
 
 
 
