@@ -108,7 +108,7 @@ io.on('connection', (socket) => {
       PvP:false,
       depth:depth
     }
-
+    console.log(games[gameId].timer)
     io.to(gameId).emit('vsComputer-start' , gameId)
     //sending the gameId to set in the state in the frontend; was not extremely necessary but still for maintaining the consistency and resusability of code
   })
@@ -126,7 +126,6 @@ io.on('connection', (socket) => {
 
     const game = games[gameId];
     const { chess, timer, currentPlayer, lastMoveTime, movesHistory } = game;
-    console.log(chess.fen())
     try {
       //if request for castling comes, then enters in this
       if(castleMove){

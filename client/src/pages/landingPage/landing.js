@@ -3,12 +3,14 @@ import '../../styles/landing.css'
 import { GameContext } from '../../context/context'
 import { useNavigate } from 'react-router-dom'
 const Landing = ()=>{
-    const {setGameState , gameId ,setGameId , setDepth , setStart , start} = useContext(GameContext)
+    const {setGameState , gameId ,setGameId , setDepth , setStart , setSocket , setDead , setMovesHistory} = useContext(GameContext)
     const navigate = useNavigate()
 
     useEffect(()=>{
-        console.log(start)
         setStart(false)
+        setSocket(null)
+        setDead([])
+        setMovesHistory([])
     },[])
     const handleComputer = ()=>{
         setGameState('Computer')

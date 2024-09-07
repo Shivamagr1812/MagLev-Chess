@@ -8,9 +8,12 @@ const Timer = ()=>{
     const [black , setBlack] = useState(300)
 
     useEffect(()=>{
+        setWhite(300)
+        setBlack(300)
+    },[])
+
+    useEffect(()=>{
         //updating the timer every time the currentPlayer changes i.e. someone made a move
-        setWhite(timer['white'])
-        setBlack(timer['black'])
         const timerInterval = setInterval(() => {
             if(currentPlayer === 'w') setWhite((prevWhite)=>Math.max(prevWhite - 1, 0))
             else if(currentPlayer === 'b') setBlack((prevBlack)=>Math.max(prevBlack - 1, 0))
