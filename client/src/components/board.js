@@ -5,7 +5,6 @@ import {useContext, useEffect, useState} from 'react'
 import {useNavigate} from 'react-router-dom'
 import PawnPromote from './pawnPromote.js'
 import Moves from './moves.js'
-import Castling from './castling.js'
 import {Bishop, Knight, Queen, Rook} from  '../class/piece.js'
 import { GameContext } from '../context/context.js'
 import io from 'socket.io-client';
@@ -18,14 +17,14 @@ const Board = ({grid})=>{
     const [current ,  setCurrent ]=useState(null)
     const [promotePawn , setPromotePawn]=useState(false)
     const [promotionMove , setPromotionMove]=useState(null)
-    const [castling , setCastling] = useState({})
+    // const [castling , setCastling] = useState({})
     const [info , setInfo] = useState("")
     //the current state variable will store the piece selected and the columnIndex and rowIndex of that piece in an object
     const navigate = useNavigate()
 
     //this URL is for connecting with the server using websockets
-    const URL = 'https://maglev-chess-backend.onrender.com/'
-    // const URL = 'http://localhost:5000'
+    // const URL = 'https://maglev-chess-backend.onrender.com/'
+    const URL = 'http://localhost:5000'
 
     //this variable is to initialize an empty board. Its and empty 2D Array
     const board = Array(8).fill(Array(8).fill(""));
@@ -110,11 +109,6 @@ const Board = ({grid})=>{
                 if(response.isCheck) setInfo('That is a Check!')
                 //checks for a check
 
-                if(response.isCheckmate){
-                    setInfo('That is a Checkmate! Game Ends')
-                    navigate(-1)
-                }
-
                 if(response.capturedPiece) setDead(dead=>[...dead , `${move.color==='w'?'b':'w'}${response.capturedPiece}`])
                 //adds any dead piece to the dead state array
 
@@ -125,32 +119,34 @@ const Board = ({grid})=>{
                 //putting value NULL for the key i.e. initial position of the piece
 
                 //moving the rook if castling was successful
-                if(response.castleMove === 'K'){
+                if(move.from === 'e1' && move.to === 'g1'){
                     const rook = grid.get('h1')
                     grid.set('h1' , null)
                     grid.set('f1' , rook)
                 }
-                else if(response.castleMove === 'Q'){
+                else if(move.from === 'e1' && move.to === 'c1'){
                     const rook = grid.get('a1')
                     grid.set('a1' , null)
                     grid.set('d1' , rook)
                 }
-                else if(response.castleMove === 'k'){
+                else if(move.from === 'e8' && move.to === 'g8'){
                     const rook = grid.get('h8')
                     grid.set('h8' , null)
                     grid.set('f8' , rook)
                 }
-                else if(response.castleMove === 'q'){
+                else if(move.from === 'e8' && move.to === 'c8'){
                     const rook = grid.get('a8')
                     grid.set('a8' , null)
                     grid.set('d8' , rook)
                 }
 
-                //ensures if castling in now possible or not
-                setCastling(response.castling)
+                if(response.isCheckmate){
+                    alert(`That is a Checkmate!`)
+                    navigate(-1)
+                }
 
                 setCurrent(null)
-                setInfo('')
+                if(!response.isCheck) setInfo('')
             }
             else {
                 setInfo('Invalid Move')
@@ -199,18 +195,12 @@ const Board = ({grid})=>{
         }
     },[])
 
+
     //a function to emit move to the socket server
-    function emitMove({sourceSquare , targetSquare , currentPiece , promotion=null , flagComputer , castleMove }){
+    function emitMove({sourceSquare , targetSquare , currentPiece , promotion=null , flagComputer }){
         setInfo("")
         if(!socket) return
-        socket.emit('move' , {sourceSquare , targetSquare , currentPiece , gameId:gameId , flagComputer , promotion , castleMove})
-    }
-
-    //a function to emit the message for castle
-    function handleCastleMove(castleMove) {
-        if(!socket) return
-        setCastling({})
-        emitMove({sourceSquare:null , targetSquare:null , currentPiece:null , promotion:null , flagComputer:false , castleMove:castleMove})
+        socket.emit('move' , {sourceSquare , targetSquare , currentPiece , gameId:gameId , flagComputer , promotion })
     }
 
     const handlePromotionMove = (promotedTo)=>{
@@ -293,8 +283,8 @@ const Board = ({grid})=>{
                 )
             })}
         </div>
-        {((gameState === 'Against Black' && currentPlayer === 'w') || (gameState === 'Against White' && currentPlayer === 'b')) && <Castling castling={castling} handleCastleMove={handleCastleMove}/>}
-        <div className='forfiet-btn-wrapper'><button className='forfiet-btn'  onClick={()=>{handleForfiet()}}>RESIGN</button></div>
+        {/* {((gameState === 'PlayerW' && currentPlayer === 'w') || (gameState === 'PlayerB' && currentPlayer === 'b')) && <Castling castling={castling} handleCastleMove={handleCastleMove}/>} */}
+        <div className='forfiet-btn-wrapper'><button className='forfiet-btn'  onClick={()=>{handleForfiet()}}>FORFIET</button></div>
         </>)
     )
 }

@@ -3,7 +3,7 @@ import '../../styles/landing.css'
 import { GameContext } from '../../context/context'
 import { useNavigate } from 'react-router-dom'
 const Landing = ()=>{
-    const {setGameState , gameId ,setGameId , setDepth , setStart , setSocket , setDead , setMovesHistory} = useContext(GameContext)
+    const {setGameState , gameId ,setGameId , setDepth , setStart , setSocket , setDead , setMovesHistory , setCurrentPlayer} = useContext(GameContext)
     const navigate = useNavigate()
 
     useEffect(()=>{
@@ -11,6 +11,8 @@ const Landing = ()=>{
         setSocket(null)
         setDead([])
         setMovesHistory([])
+        setCurrentPlayer('w')
+        setGameState(null)
     },[])
     const handleComputer = ()=>{
         setGameState('Computer')
@@ -44,7 +46,7 @@ const Landing = ()=>{
             <button className="landing-btn" onClick={handlePlayerW}>
                 Play v/s Player (as White)
             </button>
-            <input style={{marginTop:'20px'}} type='text' placeholder='Enter the Game Id and Join to play as Black' onChange={(e)=>{setGameId(e.target.value)}}/>
+            <input style={{marginTop:'20px'}} type='text' placeholder='Enter the Game Id and Join to play as Black' onChange={(e)=>{setGameId((e.target.value).trim())}}/>
             <button className="landing-btn" onClick={handlePlayerB}>
                 Join a Game (as Black) 
             </button>

@@ -1,33 +1,12 @@
 const calculateTimeSpent = require('./timeSpent.js')
-const checkCastling = require('./checkCastling.js')
 const getMoveFromStockfish = require('./moveStockfish.js')
 
-const Move = async({io , game ,  sourceSquare, targetSquare , currentPiece , gameId , flagComputer , promotion , castleMove })=>{
+const Move = async({io , game ,  sourceSquare, targetSquare , currentPiece , gameId , flagComputer , promotion  })=>{
     const { chess, timer, currentPlayer, lastMoveTime, movesHistory } = game;
     let returnObject = {}
 
     try {
-      //if request for castling comes, then enters in this
-      if(castleMove){
-        if(currentPlayer === 'w' && castleMove ==='K'){
-          sourceSquare = 'e1'
-          targetSquare = 'g1'
-        }
-        else if(currentPlayer === 'w' && castleMove ==='Q'){
-          sourceSquare = 'e1'
-          targetSquare = 'c1'
-        } 
-        else if(currentPlayer === 'b' && castleMove ==='K'){
-          sourceSquare = 'e8'
-          targetSquare = 'g8'
-        } 
-        else if(currentPlayer === 'b' && castleMove ==='Q'){
-          sourceSquare = 'e8'
-          targetSquare = 'c8'
-        } 
-        if(currentPlayer === 'w') castleMove = castleMove.toUpperCase()
-      }
-
+      
     // Validate the move
       const move = chess.move({
         from: sourceSquare,
@@ -62,9 +41,6 @@ const Move = async({io , game ,  sourceSquare, targetSquare , currentPiece , gam
         
         // Check if there was an opponent's piece captured
         const capturedPiece = move.captured ? move.captured.toUpperCase() : null;
-  
-        //check for availability of castling with the utility function for the next move
-        const castling = checkCastling(currentFEN , game)
         
         returnObject = {
             move,
@@ -78,8 +54,8 @@ const Move = async({io , game ,  sourceSquare, targetSquare , currentPiece , gam
             currentPiece,
             movesHistory,
             currentPlayer:game.currentPlayer,
-            castling,
-            castleMove
+            // castling,
+            // castleMove
             //difference between castleMove and castling - castleMove stores the castle that happened in this move(if any) whereas castling stores the possibility of castling in the next move
           }
 
@@ -121,8 +97,6 @@ const Move = async({io , game ,  sourceSquare, targetSquare , currentPiece , gam
       timer[currentPlayer === 'w' ? 'white' : 'black'] -= timeSpent;
 
       const currentFEN = chess.fen()
-      console.log(currentFEN)
-      const castling = checkCastling(currentFEN , game)
 
       returnObject = {
         move:false,
@@ -136,8 +110,8 @@ const Move = async({io , game ,  sourceSquare, targetSquare , currentPiece , gam
         currentPiece:null,
         movesHistory:null,
         currentPlayer:game.currentPlayer,
-        castling,
-        castleMove:null
+        // castling,
+        // castleMove:null
       }
       io.to(gameId).emit('move', returnObject);
     }

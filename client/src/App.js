@@ -3,6 +3,7 @@ import Game from "./pages/gamePage/game"
 import Landing from "./pages/landingPage/landing";
 import {BrowserRouter , Routes , Route} from 'react-router-dom'
 function App() {
+  document.title = 'MagLev Chess'
   return (
     <GameContextProvider>
     <h1>MagLev-Chess</h1>
