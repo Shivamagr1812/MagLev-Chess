@@ -23,8 +23,8 @@ const Board = ({grid})=>{
     const navigate = useNavigate()
 
     //this URL is for connecting with the server using websockets
-    // const URL = 'https://maglev-chess-backend.onrender.com/'
-    const URL = 'http://localhost:5000'
+    const URL = 'https://maglev-chess-backend.onrender.com/'
+    // const URL = 'http://localhost:5000'
 
     //this variable is to initialize an empty board. Its and empty 2D Array
     const board = Array(8).fill(Array(8).fill(""));
@@ -284,7 +284,7 @@ const Board = ({grid})=>{
             })}
         </div>
         {/* {((gameState === 'PlayerW' && currentPlayer === 'w') || (gameState === 'PlayerB' && currentPlayer === 'b')) && <Castling castling={castling} handleCastleMove={handleCastleMove}/>} */}
-        <div className='forfiet-btn-wrapper'><button className='forfiet-btn'  onClick={()=>{handleForfiet()}}>FORFIET</button></div>
+        <div className='forfiet-btn-wrapper'><button className='forfiet-btn'  onClick={()=>{handleForfiet()}}>RESIGN</button></div>
         </>)
     )
 }
