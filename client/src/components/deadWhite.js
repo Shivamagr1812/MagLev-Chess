@@ -12,7 +12,6 @@ const DeadWhite = ()=>{
     return(
         <div className="dead-piece-wrapper">
             {dead.map((piece)=>{
-                console.log(deadIcons.get(piece[1]))
                 if(piece[0]==='w') 
                 return(
                     <div className="dead-white-piece">
