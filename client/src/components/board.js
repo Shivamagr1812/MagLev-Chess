@@ -294,7 +294,7 @@ const Board = ({grid})=>{
             })}
         </div>
         {((gameState === 'Against Black' && currentPlayer === 'w') || (gameState === 'Against White' && currentPlayer === 'b')) && <Castling castling={castling} handleCastleMove={handleCastleMove}/>}
-        <div className='forfiet-btn-wrapper'><button className='forfiet-btn'  onClick={()=>{handleForfiet()}}>FORFIET</button></div>
+        <div className='forfiet-btn-wrapper'><button className='forfiet-btn'  onClick={()=>{handleForfiet()}}>RESIGN</button></div>
         </>)
     )
 }
