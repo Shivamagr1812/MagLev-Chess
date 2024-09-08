@@ -123,6 +123,18 @@ io.on('connection', (socket) => {
 
     const game = games[gameId];
     const responseObject = await Move({io , game ,  sourceSquare, targetSquare , currentPiece , gameId , flagComputer , promotion , castleMove })
+    if(!flagComputer) {
+      app.post('/move-to-hw', async (req, res) => {
+        res.send(responseObject);
+      });
+    }
+  });
+
+  app.get('/move-from-hw', async (req, res) => {
+    const { sourceSquare, targetSquare, currentPiece, gameId, flagComputer, promotion, castleMove } = req.query;
+    const game = games[gameId];
+    const responseObject = await Move({ io, game, sourceSquare, targetSquare, currentPiece, gameId, flagComputer, promotion, castleMove });
+    res.send(responseObject);
   });
 
 
