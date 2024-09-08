@@ -26,10 +26,17 @@ app.get('/', (req, res) => {
   res.send('Server is running');
 });
 
+app.post('/move-from-hw', async (req, res) => {
+  const { sourceSquare, targetSquare, currentPiece, gameId, flagComputer, promotion, castleMove } = req.query;
+  const game = games[gameId];
+  const responseObject = await Move({ io, game, sourceSquare, targetSquare, currentPiece, gameId, flagComputer, promotion, castleMove });
+  res.send(responseObject);
+});
+
 // Store game states
 const games = {};
 
-io.on('connection', (socket) => {
+io.on('connection', () => {
   console.log('a user connected');
   
 
@@ -38,7 +45,7 @@ io.on('connection', (socket) => {
 
   // Create a new game for each connection (or use room ID)
   socket.on('white-joins', ()=>{
-    const gameId = socket.id
+    const gasocketmeId = socket.id
     // White player starts the game, use their socket ID as gameId
     console.log(`Game started with ID: ${gameId}`);
 
@@ -123,19 +130,9 @@ io.on('connection', (socket) => {
 
     const game = games[gameId];
     const responseObject = await Move({io , game ,  sourceSquare, targetSquare , currentPiece , gameId , flagComputer , promotion , castleMove })
-    if(!flagComputer) {
-      app.post('/move-to-hw', async (req, res) => {
-        res.send(responseObject);
-      });
-    }
   });
 
-  app.get('/move-from-hw', async (req, res) => {
-    const { sourceSquare, targetSquare, currentPiece, gameId, flagComputer, promotion, castleMove } = req.query;
-    const game = games[gameId];
-    const responseObject = await Move({ io, game, sourceSquare, targetSquare, currentPiece, gameId, flagComputer, promotion, castleMove });
-    res.send(responseObject);
-  });
+  
 
 
   socket.on('forfiet-game' , ({gameState , gameId})=>{
