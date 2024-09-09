@@ -36,7 +36,7 @@ app.post('/move-from-hw', async (req, res) => {
 // Store game states
 const games = {};
 
-io.on('connection', () => {
+io.on('connection', (socket) => {
   console.log('a user connected');
   
 
@@ -45,7 +45,7 @@ io.on('connection', () => {
 
   // Create a new game for each connection (or use room ID)
   socket.on('white-joins', ()=>{
-    const gasocketmeId = socket.id
+    const gameId = socket.id
     // White player starts the game, use their socket ID as gameId
     console.log(`Game started with ID: ${gameId}`);
 
