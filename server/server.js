@@ -27,9 +27,9 @@ app.get('/', (req, res) => {
 });
 
 app.post('/move-from-hw', async (req, res) => {
-  const { sourceSquare, targetSquare, currentPiece, gameId, flagComputer, promotion, castleMove } = req.query;
+  const { sourceSquare, targetSquare, currentPiece, gameId, flagComputer, promotion } = req.query;
   const game = games[gameId];
-  const responseObject = await Move({ io, game, sourceSquare, targetSquare, currentPiece, gameId, flagComputer, promotion, castleMove });
+  const responseObject = await Move({ io, game, sourceSquare, targetSquare, currentPiece, gameId, flagComputer, promotion });
   res.send(responseObject);
 });
 

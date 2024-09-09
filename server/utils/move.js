@@ -65,7 +65,7 @@ const Move = async({io , game ,  sourceSquare, targetSquare , currentPiece , gam
         // If the game is over, emit end the game
         if (isCheckmate || isDraw || isStalemate || isInsufficientMaterial) {
             returnObject = {...returnObject , gameOver:true}
-          socket.emit('game-over', {
+          io.to(gameId).emit('game-over', {
             result: isCheckmate ? 'checkmate' : isDraw ? 'draw' : isStalemate ? 'stalemate' : 'insufficient material',
           });
         }
@@ -88,7 +88,7 @@ const Move = async({io , game ,  sourceSquare, targetSquare , currentPiece , gam
         }
 
       } else {
-        socket.emit('invalid-move', 'Invalid move');
+        io.to(gameId).emit('invalid-move', 'Invalid move');
       }
     } catch (error) {
 

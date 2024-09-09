@@ -23,8 +23,8 @@ const Board = ({grid})=>{
     const navigate = useNavigate()
 
     //this URL is for connecting with the server using websockets
-    // const URL = 'https://maglev-chess-backend.onrender.com/'
-    const URL = 'http://localhost:5000'
+    const URL = 'https://maglev-chess-backend.onrender.com/'
+    // const URL = 'http://localhost:5000'
 
     //this variable is to initialize an empty board. Its and empty 2D Array
     const board = Array(8).fill(Array(8).fill(""));
@@ -154,6 +154,11 @@ const Board = ({grid})=>{
             }
         })
 
+        newSocket.on('time-over' , ({winner})=>{
+            alert(`${winner} won By Time Over`)
+            navigate(-1)
+        })
+
         newSocket.on('game-over' , (result)=>{
             console.log(`Game-Over, Result:\n${result}`)
             alert(result)
@@ -178,7 +183,6 @@ const Board = ({grid})=>{
         })
 
         newSocket.on('forfiet-game' , ({winner , forfieted})=>{
-            console.log(winner)
             alert(`${forfieted} Resigned\n${winner} Wins!!`)
             navigate(-1)
         })
